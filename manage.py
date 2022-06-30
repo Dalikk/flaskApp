@@ -1,12 +1,12 @@
-from flask import Flask
+import os
+from app import create_app, db
+from app.models import User, Role
+from flask_migrate import Migrate
 
-app = Flask(__name__)
+app = create_app(os.getenv('FLASK_CONFIG') or 'default')
+migrate = Migrate(app, db)
 
 
-@app.route('/')
-def hello_world():  # put application's code here
-    return 'Hello World!'
-
-
-if __name__ == '__main__':
-    app.run()
+@app.shell_context_processor
+def make_shell_context():
+    return dict(db=db, User=User, Role=Role)
