@@ -5,6 +5,7 @@ dominate==2.6.0
 Flask==2.1.2
 Flask-Bootstrap==3.3.7.1
 flask-form==1.0.0
+Flask-Login==0.6.1
 Flask-Mail==0.9.1
 Flask-Migrate==3.1.0
 Flask-Moment==1.0.2
