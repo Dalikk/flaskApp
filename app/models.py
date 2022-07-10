@@ -4,6 +4,7 @@ from . import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from authlib.jose import JsonWebSignature
+import json
 
 
 @login_manager.user_loader
@@ -81,6 +82,34 @@ class User(UserMixin, db.Model):
             return False
         user.password = new_password
         db.session.add(user)
+        return True
+
+    def generate_email_change_token(self, new_email):
+        jws = JsonWebSignature()
+        secret = current_app.config['SECRET_KEY']
+        protected = {'alg': 'HS256'}
+        payload = str({'change_email': self.id, 'new_email': new_email}).encode('utf-8')
+        token = jws.serialize_compact(protected, payload, secret)
+        return token
+
+    def change_email(self, token):
+        jws = JsonWebSignature()
+        secret = current_app.config['SECRET_KEY']
+        try:
+            data = jws.deserialize_compact(token, secret)
+        except:
+            return False
+        payload_string = data['payload'].decode('utf-8').replace("'", "\"")
+        payload_dict = json.loads(payload_string)
+        if payload_dict['change_email'] != self.id:
+            return False
+        new_email = payload_dict['new_email']
+        if new_email is None:
+            return False
+        if self.query.filter_by(email=new_email).first() is not None:
+            return False
+        self.email = new_email
+        db.session.add(self)
         return True
 
     def __repr__(self):
