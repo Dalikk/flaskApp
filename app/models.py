@@ -61,5 +61,27 @@ class User(UserMixin, db.Model):
         db.session.add(self)
         return True
 
+    def generate_reset_token(self):
+        jws = JsonWebSignature()
+        protected = {'alg': 'HS256'}
+        payload = self.id
+        secret = current_app.config['SECRET_KEY']
+        return jws.serialize_compact(protected, payload, secret).decode('utf-8')
+
+    @staticmethod
+    def reset_password(token, new_password):
+        jws = JsonWebSignature()
+        secret = current_app.config['SECRET_KEY']
+        try:
+            data = jws.deserialize_compact(token.encode('utf-8'), secret)
+        except:
+            return False
+        user = User.query.get(int(data['payload']))
+        if user is None:
+            return False
+        user.password = new_password
+        db.session.add(user)
+        return True
+
     def __repr__(self):
         return '<User %r>' % self.username
